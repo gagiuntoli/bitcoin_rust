@@ -1,47 +1,39 @@
 use crate::finite_field::FiniteField;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Deref, Div, Mul, Sub};
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-struct Point {
-    a: FiniteField,
-    b: FiniteField,
-    x: Option<FiniteField>,
-    y: Option<FiniteField>,
+enum Point {
+    Coor {
+        a: FiniteField,
+        b: FiniteField,
+        x: FiniteField,
+        y: FiniteField,
+    },
+    Zero,
 }
 
 impl Point {
-    fn new(
-        a: FiniteField,
-        b: FiniteField,
-        x: Option<FiniteField>,
-        y: Option<FiniteField>,
-    ) -> Point {
-        let point = Point { a, b, x, y };
+    fn new(a: FiniteField, b: FiniteField, x: FiniteField, y: FiniteField) -> Point {
+        let point = Point::Coor { a, b, x, y };
         if !Self::is_in_curve(&point) {
             panic!("({:?},{:?}) point is not in the curve", x, y);
         }
         point
     }
 
-    fn inf(a: FiniteField, b: FiniteField) -> Point {
-        Point {
-            a,
-            b,
-            x: None,
-            y: None,
-        }
+    fn zero() -> Self {
+        Point::Zero
+    }
+
+    fn is_zero(self) -> bool {
+        self == Point::Zero
     }
 
     fn is_in_curve(p: &Point) -> bool {
-        match (p.x, p.y) {
-            (Some(x), Some(y)) => return y.pow(2) == x.pow(3) + p.a * x + p.b,
-            (None, _) => true,
-            (_, None) => true,
+        match p {
+            Point::Coor { a, b, x, y } => return y.pow(2) == x.pow(3) + (*a) * (*x) + *b,
+            Point::Zero => true,
         }
-    }
-
-    fn is_point_in_inf(&self) -> bool {
-        self.x == None
     }
 }
 
@@ -49,9 +41,9 @@ impl Add for Point {
     type Output = Point;
 
     fn add(self, rhs: Point) -> Point {
-        if self.is_point_in_inf() {
+        if self.is_zero() {
             return rhs;
-        } else if rhs.is_point_in_inf() {
+        } else if rhs.is_zero() {
             return self;
         }
         self
@@ -67,20 +59,20 @@ mod tests {
         let a = FiniteField::new(5, 1000);
         let b = FiniteField::new(7, 1000);
 
-        let x = Some(FiniteField::new(2, 1000));
-        let y = Some(FiniteField::new(4, 1000));
+        let x = FiniteField::new(2, 1000);
+        let y = FiniteField::new(4, 1000);
 
-        assert!(!Point::is_in_curve(&Point { a, b, x, y }));
+        assert!(!Point::is_in_curve(&Point::Coor { a, b, x, y }));
 
-        let x = Some(FiniteField::new(18, 1000));
-        let y = Some(FiniteField::new(77, 1000));
+        let x = FiniteField::new(18, 1000);
+        let y = FiniteField::new(77, 1000);
 
-        assert!(Point::is_in_curve(&Point { a, b, x, y }));
+        assert!(Point::is_in_curve(&Point::Coor { a, b, x, y }));
 
-        let x = Some(FiniteField::new(5, 1000));
-        let y = Some(FiniteField::new(7, 1000));
+        let x = FiniteField::new(5, 1000);
+        let y = FiniteField::new(7, 1000);
 
-        assert!(!Point::is_in_curve(&Point { a, b, x, y }));
+        assert!(!Point::is_in_curve(&Point::Coor { a, b, x, y }));
     }
 
     #[test]
@@ -88,13 +80,12 @@ mod tests {
         let a = FiniteField::new(5, 1000);
         let b = FiniteField::new(7, 1000);
 
-        let x = Some(FiniteField::new(18, 1000));
-        let y = Some(FiniteField::new(77, 1000));
+        let x = FiniteField::new(18, 1000);
+        let y = FiniteField::new(77, 1000);
 
-        let point_inf = Point::inf(a, b);
         let point = Point::new(a, b, x, y);
 
-        assert_eq!(point + point_inf, point);
-        assert_eq!(point_inf + point, point);
+        assert_eq!(point + Point::Zero, point);
+        assert_eq!(Point::Zero + point, point);
     }
 }
