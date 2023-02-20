@@ -1,18 +1,14 @@
 use mod_exp::mod_exp;
 use std::ops::{Add, Div, Mul, Sub};
 
-fn main() {
-    println!("Hello, world!");
-}
-
 #[derive(PartialEq, Debug, Clone, Copy)]
-struct FiniteField {
+pub struct FiniteField {
     number: u32,
     prime: u32,
 }
 
 impl FiniteField {
-    fn new(number: u32, prime: u32) -> Self {
+    pub fn new(number: u32, prime: u32) -> Self {
         if number >= prime {
             panic!(
                 "Number: {} isn't in the range [0, prime = {})",
@@ -31,7 +27,7 @@ impl FiniteField {
         }
     }
 
-    fn pow(self, exp: i32) -> FiniteField {
+    pub fn pow(self, exp: i32) -> FiniteField {
         let exp = Self::module(exp, self.prime as i32 - 1);
 
         FiniteField {
