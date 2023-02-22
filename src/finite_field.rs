@@ -45,6 +45,13 @@ impl FiniteField {
     fn module(a: i32, b: i32) -> u32 {
         (((a % b) + b) % b) as u32
     }
+
+    pub fn scale(self, scalar: u32) -> FiniteField {
+        FiniteField {
+            number: (self.number * scalar) % self.prime,
+            prime: self.prime,
+        }
+    }
 }
 
 impl Add for FiniteField {
