@@ -1,7 +1,7 @@
 use crate::finite_field::FiniteField;
-use std::ops::{Add, Deref, Div, Mul, Sub};
+use std::ops::Add;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone)]
 enum Point {
     Coor {
         a: FiniteField,
@@ -13,6 +13,7 @@ enum Point {
 }
 
 impl Point {
+    #[allow(dead_code)]
     fn new(a: FiniteField, b: FiniteField, x: FiniteField, y: FiniteField) -> Point {
         let point = Point::Coor { a, b, x, y };
         if !Self::is_on_curve(&point) {
@@ -21,10 +22,12 @@ impl Point {
         point
     }
 
+    #[allow(dead_code)]
     fn zero() -> Self {
         Point::Zero
     }
 
+    #[allow(dead_code)]
     fn is_zero(self) -> bool {
         self == Point::Zero
     }
@@ -36,6 +39,7 @@ impl Point {
         }
     }
 
+    #[allow(dead_code)]
     fn scale(self, _scalar: u32) -> Self {
         let mut current = self;
         let mut result = Point::Zero;
@@ -97,7 +101,6 @@ impl Add for Point {
                     };
                 }
             }
-            _ => panic!("unrecognized case"),
         }
     }
 }
@@ -248,5 +251,10 @@ mod tests {
         let y = FiniteField::new(51, prime);
         let pr = Point::new(a, b, x, y);
         assert_eq!(p.scale(4), pr);
+
+        let x = FiniteField::new(47, prime);
+        let y = FiniteField::new(152, prime);
+        let pr = Point::new(a, b, x, y);
+        assert_eq!(p.scale(20), pr);
     }
 }
