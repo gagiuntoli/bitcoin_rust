@@ -1,5 +1,5 @@
 use crate::finite_field::FiniteField;
-use num_bigint::{BigInt, BigUint, ToBigInt};
+use num_bigint::{BigInt, BigUint};
 use std::ops::Add;
 
 #[derive(PartialEq, Debug, Clone)]

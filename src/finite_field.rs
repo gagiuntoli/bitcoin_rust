@@ -65,6 +65,15 @@ impl FiniteField {
     }
 }
 
+impl From<(u32, u32)> for FiniteField {
+    fn from(tuple: (u32, u32)) -> Self {
+        FiniteField {
+            number: BigUint::from(tuple.0),
+            prime: BigUint::from(tuple.1),
+        }
+    }
+}
+
 impl Add for FiniteField {
     type Output = FiniteField;
 
@@ -127,12 +136,10 @@ mod tests {
 
     #[test]
     fn test_equal_and_non_equal() {
-        // a != b
-        // b == c => a != c
-        let prime = BigUint::from(11u32);
-        let a = FiniteField::new(BigUint::from(6u32), prime.clone());
-        let b = FiniteField::new(BigUint::from(5u32), prime.clone());
-        let c = FiniteField::new(BigUint::from(5u32), prime.clone());
+        let prime = 11;
+        let a = FiniteField::from((6, prime));
+        let b = FiniteField::from((5, prime));
+        let c = FiniteField::from((5, prime));
 
         assert_ne!(a, b);
         assert_eq!(b, c);
@@ -141,22 +148,22 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(11u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
-        let c = FiniteField::new(BigUint::from(0u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 11));
+        let b = FiniteField::from((5, 11));
+        let c = FiniteField::from((0, 11));
 
         assert_eq!(a + b, c);
 
-        let a = FiniteField::new(BigUint::from(44u32), BigUint::from(57u32));
-        let b = FiniteField::new(BigUint::from(33u32), BigUint::from(57u32));
-        let c = FiniteField::new(BigUint::from(20u32), BigUint::from(57u32));
+        let a = FiniteField::from((44, 57));
+        let b = FiniteField::from((33, 57));
+        let c = FiniteField::from((20, 57));
 
         assert_eq!(a + b, c);
 
-        let a = FiniteField::new(BigUint::from(17u32), BigUint::from(57u32));
-        let b = FiniteField::new(BigUint::from(42u32), BigUint::from(57u32));
-        let c = FiniteField::new(BigUint::from(49u32), BigUint::from(57u32));
-        let d = FiniteField::new(BigUint::from(51u32), BigUint::from(57u32));
+        let a = FiniteField::from((17, 57));
+        let b = FiniteField::from((42, 57));
+        let c = FiniteField::from((49, 57));
+        let d = FiniteField::from((51, 57));
 
         assert_eq!(a + b + c, d);
     }
@@ -164,24 +171,24 @@ mod tests {
     #[test]
     #[should_panic(expected = "Finite fields elements have different order lhs: 12, rhs: 11")]
     fn test_fail_adding_different_orders() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(12u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 12));
+        let b = FiniteField::from((5, 11));
 
         let _c = a + b;
     }
 
     #[test]
     fn test_substract() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(11u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
-        let c = FiniteField::new(BigUint::from(1u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 11));
+        let b = FiniteField::from((5, 11));
+        let c = FiniteField::from((1, 11));
 
         assert_eq!(a - b, c);
 
-        let a = FiniteField::new(BigUint::from(52u32), BigUint::from(57u32));
-        let b = FiniteField::new(BigUint::from(30u32), BigUint::from(57u32));
-        let c = FiniteField::new(BigUint::from(38u32), BigUint::from(57u32));
-        let d = FiniteField::new(BigUint::from(41u32), BigUint::from(57u32));
+        let a = FiniteField::from((52, 57));
+        let b = FiniteField::from((30, 57));
+        let c = FiniteField::from((38, 57));
+        let d = FiniteField::from((41, 57));
 
         assert_eq!(a - b - c, d);
     }
@@ -189,17 +196,17 @@ mod tests {
     #[test]
     #[should_panic(expected = "Finite fields elements have different order lhs: 12, rhs: 11")]
     fn test_fail_substracting_different_orders() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(12u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 12));
+        let b = FiniteField::from((5, 11));
 
         let _c = a - b;
     }
 
     #[test]
     fn test_multiply() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(11u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
-        let c = FiniteField::new(BigUint::from(8u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 11));
+        let b = FiniteField::from((5, 11));
+        let c = FiniteField::from((8, 11));
 
         assert_eq!(a * b, c);
     }
@@ -207,27 +214,27 @@ mod tests {
     #[test]
     #[should_panic(expected = "Finite fields elements have different order lhs: 12, rhs: 11")]
     fn test_fail_multiplying_different_orders() {
-        let a = FiniteField::new(BigUint::from(6u32), BigUint::from(12u32));
-        let b = FiniteField::new(BigUint::from(5u32), BigUint::from(11u32));
+        let a = FiniteField::from((6, 12));
+        let b = FiniteField::from((5, 11));
 
         let _c = a * b;
     }
 
     #[test]
     fn test_exponentiation() {
-        let a = FiniteField::new(BigUint::from(7u32), BigUint::from(19u32));
-        let b = FiniteField::new(BigUint::from(1u32), BigUint::from(19u32));
+        let a = FiniteField::from((7, 19));
+        let b = FiniteField::from((1, 19));
 
         assert_eq!(a.pow(BigInt::from(3u32)), b);
 
-        let a = FiniteField::new(BigUint::from(9u32), BigUint::from(19u32));
-        let b = FiniteField::new(BigUint::from(7u32), BigUint::from(19u32));
+        let a = FiniteField::from((9, 19));
+        let b = FiniteField::from((7, 19));
 
         assert_eq!(a.pow(BigInt::from(12u32)), b);
 
-        let a = FiniteField::new(BigUint::from(12u32), BigUint::from(97u32));
-        let b = FiniteField::new(BigUint::from(77u32), BigUint::from(97u32));
-        let c = FiniteField::new(BigUint::from(63u32), BigUint::from(97u32));
+        let a = FiniteField::from((12, 97));
+        let b = FiniteField::from((77, 97));
+        let c = FiniteField::from((63, 97));
 
         assert_eq!(a.pow(BigInt::from(7u32)) * b.pow(BigInt::from(49u32)), c);
     }
@@ -235,77 +242,65 @@ mod tests {
     #[test]
     fn test_exercise_5() {
         let all_elements = (0..19)
-            .map(|i| FiniteField::new(BigUint::from(i as u32), BigUint::from(19u32)))
+            .map(|i| FiniteField::from((i, 19)))
             .collect::<Vec<FiniteField>>();
 
         assert!((0..19)
-            .map(|i| FiniteField::new(BigUint::from(i as u32 * 1), BigUint::from(19u32)))
+            .map(|i| FiniteField::from(((i * 1) % 19, 19)))
             .all(|elem| all_elements.contains(&elem)));
 
         assert!((0..19)
-            .map(|i| FiniteField::new(BigUint::from((i as u32 * 3) % 19), BigUint::from(19u32)))
+            .map(|i| FiniteField::from(((i * 3) % 19, 19)))
             .all(|elem| all_elements.contains(&elem)));
 
         assert!((0..19)
-            .map(|i| FiniteField::new(BigUint::from((i as u32 * 7) % 19), BigUint::from(19u32)))
+            .map(|i| FiniteField::from(((i * 7) % 19, 19)))
             .all(|elem| all_elements.contains(&elem)));
 
         assert!((0..19)
-            .map(|i| FiniteField::new(BigUint::from((i as u32 * 13) % 19), BigUint::from(19u32)))
+            .map(|i| FiniteField::from(((i * 13) % 19, 19)))
             .all(|elem| all_elements.contains(&elem)));
 
         assert!((0..19)
-            .map(|i| FiniteField::new(BigUint::from((i as u32 * 18) % 19), BigUint::from(19u32)))
+            .map(|i| FiniteField::from(((i * 18) % 19, 19)))
             .all(|elem| all_elements.contains(&elem)));
     }
 
     #[test]
     fn test_exercise_7() {
         assert!((1..7)
-            .map(
-                |i| FiniteField::new(BigUint::from(i as u32), BigUint::from(7u32))
-                    .pow(BigInt::from(7u32 - 1))
-            )
-            .all(|elem| elem == FiniteField::new(BigUint::one(), BigUint::from(7u32))));
+            .map(|i| FiniteField::from((i, 7)).pow(BigInt::from(7u32 - 1)))
+            .all(|elem| elem == FiniteField::from((1, 7))));
 
         assert!((1..11)
-            .map(
-                |i| FiniteField::new(BigUint::from(i as u32), BigUint::from(11u32))
-                    .pow(BigInt::from(11u32 - 1))
-            )
-            .all(|elem| elem == FiniteField::new(BigUint::one(), BigUint::from(11u32))));
+            .map(|i| FiniteField::from((i, 11)).pow(BigInt::from(11u32 - 1)))
+            .all(|elem| elem == FiniteField::from((1, 11))));
 
         assert!((1..17)
-            .map(
-                |i| FiniteField::new(BigUint::from(i as u32), BigUint::from(17u32))
-                    .pow(BigInt::from(17u32 - 1))
-            )
-            .all(|elem| elem == FiniteField::new(BigUint::one(), BigUint::from(17u32))));
+            .map(|i| FiniteField::from((i, 17)).pow(BigInt::from(17u32 - 1)))
+            .all(|elem| elem == FiniteField::from((1, 17))));
 
         assert!((1..31)
-            .map(
-                |i| FiniteField::new(BigUint::from(i as u32), BigUint::from(31u32))
-                    .pow(BigInt::from(31u32 - 1))
-            )
-            .all(|elem| elem == FiniteField::new(BigUint::one(), BigUint::from(31u32))));
+            .map(|i| FiniteField::from((i, 31)).pow(BigInt::from(31u32 - 1)))
+            .all(|elem| elem == FiniteField::from((1, 31))));
     }
 
     #[test]
     fn test_operations() {
-        let a = FiniteField::new(BigUint::from(3u32), BigUint::from(31u32));
-        let b = FiniteField::new(BigUint::from(24u32), BigUint::from(31u32));
-        let c = FiniteField::new(BigUint::from(4u32), BigUint::from(31u32));
+        let a = FiniteField::from((3, 31));
+        let b = FiniteField::from((24, 31));
+        let c = FiniteField::from((4, 31));
 
         assert_eq!(a / b, c);
 
-        let a = FiniteField::new(BigUint::from(17u32), BigUint::from(31u32));
-        let b = FiniteField::new(BigUint::from(29u32), BigUint::from(31u32));
+        let a = FiniteField::from((17, 31));
+        let b = FiniteField::from((29, 31));
 
         assert_eq!(a.pow(BigInt::from(-3)), b);
 
-        let a = FiniteField::new(BigUint::from(4u32), BigUint::from(31u32));
-        let b = FiniteField::new(BigUint::from(11u32), BigUint::from(31u32));
-        let c = FiniteField::new(BigUint::from(13u32), BigUint::from(31u32));
+        let a = FiniteField::from((4, 31));
+        let b = FiniteField::from((11, 31));
+        let c = FiniteField::from((13, 31));
 
         assert_eq!(a.pow(BigInt::from(-4)) * b, c);
     }
