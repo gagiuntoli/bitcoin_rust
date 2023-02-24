@@ -1,9 +1,6 @@
 use num::{Integer, One};
 use num_bigint::{BigInt, BigUint, ToBigInt};
-use std::{
-    ops::{Add, Div, Mul, Sub},
-    str::FromStr,
-};
+use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct FiniteField {
@@ -51,10 +48,7 @@ impl FiniteField {
         let exp = exp.mod_floor(&(self.prime.clone() - BigUint::one()).to_bigint().unwrap());
         let exp = exp.to_biguint().unwrap();
 
-        let exp = exp.modpow(
-            &BigUint::from_str("1").unwrap(),
-            &(self.prime.clone() - BigUint::one()),
-        );
+        let exp = exp.modpow(&BigUint::one(), &(self.prime.clone() - BigUint::one()));
 
         FiniteField {
             number: self.number.modpow(&exp, &self.prime),
