@@ -15,7 +15,7 @@ enum Point {
 
 impl Point {
     #[allow(dead_code)]
-    fn new(a: FiniteField, b: FiniteField, x: FiniteField, y: FiniteField) -> Point {
+    fn new(a: &FiniteField, b: &FiniteField, x: &FiniteField, y: &FiniteField) -> Point {
         let point = Point::Coor {
             a: a.clone(),
             b: b.clone(),
@@ -123,13 +123,13 @@ mod tests {
 
     #[test]
     fn test_on_curve() {
-        let prime = BigUint::from(223u32);
-        let a = FiniteField::new(BigUint::from(0u32), prime.clone());
-        let b = FiniteField::new(BigUint::from(7u32), prime.clone());
+        let prime = 223;
+        let a = FiniteField::from((0, prime));
+        let b = FiniteField::from((7, prime));
 
         // on the curve
-        let x = FiniteField::new(BigUint::from(192u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(105u32), prime.clone());
+        let x = FiniteField::from((192, prime));
+        let y = FiniteField::from((105, prime));
 
         assert!(Point::is_on_curve(&Point::Coor {
             a: a.clone(),
@@ -138,8 +138,8 @@ mod tests {
             y
         }));
 
-        let x = FiniteField::new(BigUint::from(17u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(56u32), prime.clone());
+        let x = FiniteField::from((17, prime));
+        let y = FiniteField::from((56, prime));
 
         assert!(Point::is_on_curve(&Point::Coor {
             a: a.clone(),
@@ -148,8 +148,8 @@ mod tests {
             y
         }));
 
-        let x = FiniteField::new(BigUint::from(1u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(193u32), prime.clone());
+        let x = FiniteField::from((1, prime));
+        let y = FiniteField::from((193, prime));
 
         assert!(Point::is_on_curve(&Point::Coor {
             a: a.clone(),
@@ -159,8 +159,8 @@ mod tests {
         }));
 
         // not on the curve
-        let x = FiniteField::new(BigUint::from(200u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(119u32), prime.clone());
+        let x = FiniteField::from((200, prime));
+        let y = FiniteField::from((119, prime));
 
         assert!(!Point::is_on_curve(&Point::Coor {
             a: a.clone(),
@@ -169,124 +169,124 @@ mod tests {
             y
         }));
 
-        let x = FiniteField::new(BigUint::from(42u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(99u32), prime.clone());
+        let x = FiniteField::from((42, prime));
+        let y = FiniteField::from((99, prime));
 
         assert!(!Point::is_on_curve(&Point::Coor { a, b, x, y }));
     }
 
     #[test]
     fn test_point_addition() {
-        let prime = BigUint::from(223u32);
-        let a = FiniteField::new(BigUint::from(0u32), prime.clone());
-        let b = FiniteField::new(BigUint::from(7u32), prime.clone());
+        let prime = 223;
+        let a = FiniteField::from((0, prime));
+        let b = FiniteField::from((7, prime));
 
-        let x = FiniteField::new(BigUint::from(192u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(105u32), prime.clone());
+        let x = FiniteField::from((192, prime));
+        let y = FiniteField::from((105, prime));
 
-        let p1 = Point::new(a.clone(), b.clone(), x, y);
+        let p1 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(17u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(56u32), prime.clone());
+        let x = FiniteField::from((17, prime));
+        let y = FiniteField::from((56, prime));
 
-        let p2 = Point::new(a.clone(), b.clone(), x, y);
+        let p2 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(170u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(142u32), prime.clone());
+        let x = FiniteField::from((170, prime));
+        let y = FiniteField::from((142, prime));
 
-        let p3 = Point::new(a.clone(), b.clone(), x, y);
+        let p3 = Point::new(&a, &b, &x, &y);
 
         assert_eq!(p1 + p2, p3);
 
         // (170,142) + (60, 139)
-        let x = FiniteField::new(BigUint::from(170u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(142u32), prime.clone());
+        let x = FiniteField::from((170, prime));
+        let y = FiniteField::from((142, prime));
 
-        let p1 = Point::new(a.clone(), b.clone(), x, y);
+        let p1 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(60u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(139u32), prime.clone());
+        let x = FiniteField::from((60, prime));
+        let y = FiniteField::from((139, prime));
 
-        let p2 = Point::new(a.clone(), b.clone(), x, y);
+        let p2 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(220u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(181u32), prime.clone());
+        let x = FiniteField::from((220, prime));
+        let y = FiniteField::from((181, prime));
 
-        let p3 = Point::new(a.clone(), b.clone(), x, y);
+        let p3 = Point::new(&a, &b, &x, &y);
 
         assert_eq!(p1 + p2, p3);
 
         // (47,71) + (17,56)
-        let x = FiniteField::new(BigUint::from(47u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(71u32), prime.clone());
+        let x = FiniteField::from((47, prime));
+        let y = FiniteField::from((71, prime));
 
-        let p1 = Point::new(a.clone(), b.clone(), x, y);
+        let p1 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(17u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(56u32), prime.clone());
+        let x = FiniteField::from((17, prime));
+        let y = FiniteField::from((56, prime));
 
-        let p2 = Point::new(a.clone(), b.clone(), x, y);
+        let p2 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(215u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(68u32), prime.clone());
+        let x = FiniteField::from((215, prime));
+        let y = FiniteField::from((68, prime));
 
-        let p3 = Point::new(a.clone(), b.clone(), x, y);
+        let p3 = Point::new(&a, &b, &x, &y);
 
         assert_eq!(p1 + p2, p3);
 
         // (143,98) + (76,66)
-        let x = FiniteField::new(BigUint::from(143u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(98u32), prime.clone());
+        let x = FiniteField::from((143, prime));
+        let y = FiniteField::from((98, prime));
 
-        let p1 = Point::new(a.clone(), b.clone(), x, y);
+        let p1 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(76u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(66u32), prime.clone());
+        let x = FiniteField::from((76, prime));
+        let y = FiniteField::from((66, prime));
 
-        let p2 = Point::new(a.clone(), b.clone(), x, y);
+        let p2 = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(47u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(71u32), prime.clone());
+        let x = FiniteField::from((47, prime));
+        let y = FiniteField::from((71, prime));
 
-        let p3 = Point::new(a, b, x, y);
+        let p3 = Point::new(&a, &b, &x, &y);
 
         assert_eq!(p1 + p2, p3);
     }
 
     #[test]
     fn test_scale() {
-        let prime = BigUint::from(223u32);
-        let a = FiniteField::new(BigUint::from(0u32), prime.clone());
-        let b = FiniteField::new(BigUint::from(7u32), prime.clone());
+        let prime = 223;
+        let a = FiniteField::from((0, prime));
+        let b = FiniteField::from((7, prime));
 
-        let x = FiniteField::new(BigUint::from(47u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(71u32), prime.clone());
+        let x = FiniteField::from((47, prime));
+        let y = FiniteField::from((71, prime));
 
-        let p = Point::new(a.clone(), b.clone(), x, y);
+        let p = Point::new(&a, &b, &x, &y);
 
-        let x = FiniteField::new(BigUint::from(47u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(71u32), prime.clone());
-        let pr = Point::new(a.clone(), b.clone(), x, y);
+        let x = FiniteField::from((47, prime));
+        let y = FiniteField::from((71, prime));
+        let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.clone().scale(1), pr);
 
-        let x = FiniteField::new(BigUint::from(36u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(111u32), prime.clone());
-        let pr = Point::new(a.clone(), b.clone(), x, y);
+        let x = FiniteField::from((36, prime));
+        let y = FiniteField::from((111, prime));
+        let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.clone().scale(2), pr);
 
-        let x = FiniteField::new(BigUint::from(15u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(137u32), prime.clone());
-        let pr = Point::new(a.clone(), b.clone(), x, y);
+        let x = FiniteField::from((15, prime));
+        let y = FiniteField::from((137, prime));
+        let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.clone().scale(3), pr);
 
-        let x = FiniteField::new(BigUint::from(194u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(51u32), prime.clone());
-        let pr = Point::new(a.clone(), b.clone(), x, y);
+        let x = FiniteField::from((194, prime));
+        let y = FiniteField::from((51, prime));
+        let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.clone().scale(4), pr);
 
-        let x = FiniteField::new(BigUint::from(47u32), prime.clone());
-        let y = FiniteField::new(BigUint::from(152u32), prime);
-        let pr = Point::new(a, b, x, y);
+        let x = FiniteField::from((47, prime));
+        let y = FiniteField::from((152, prime));
+        let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.scale(20), pr);
     }
 }
