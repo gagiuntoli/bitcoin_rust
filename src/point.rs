@@ -1,4 +1,5 @@
 use crate::finite_field::FiniteField;
+use hex;
 use num_bigint::{BigInt, BigUint};
 use std::ops::Add;
 
@@ -288,5 +289,26 @@ mod tests {
         let y = FiniteField::from((152, prime));
         let pr = Point::new(&a, &b, &x, &y);
         assert_eq!(p.scale(20), pr);
+    }
+
+    #[test]
+    fn test_bitcoin_generator_point() {
+        let prime = hex::decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
+            .unwrap();
+
+        let a = hex::decode("00").unwrap();
+        let b = hex::decode("07").unwrap();
+
+        let gx = hex::decode("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
+            .unwrap();
+        let gy = hex::decode("483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
+            .unwrap();
+
+        let a = FiniteField::from_bytes_be(&a, &prime);
+        let b = FiniteField::from_bytes_be(&b, &prime);
+        let gx = FiniteField::from_bytes_be(&gx, &prime);
+        let gy = FiniteField::from_bytes_be(&gy, &prime);
+
+        assert!(Point::is_on_curve(&Point::Coor { a, b, x: gx, y: gy }));
     }
 }

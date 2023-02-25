@@ -21,16 +21,9 @@ impl FiniteField {
     }
 
     #[allow(dead_code)]
-    pub fn new_from_u32(number: u32, prime: u32) -> Self {
-        if number >= prime {
-            panic!(
-                "Number: {} isn't in the range [0, prime = {})",
-                number, prime
-            );
-        }
-
-        let number = BigUint::from(number);
-        let prime = BigUint::from(prime);
+    pub fn from_bytes_be(number: &[u8], prime: &[u8]) -> Self {
+        let number = BigUint::from_bytes_be(number);
+        let prime = BigUint::from_bytes_be(prime);
 
         FiniteField { number, prime }
     }
@@ -303,5 +296,13 @@ mod tests {
         let c = FiniteField::from((13, 31));
 
         assert_eq!(a.pow(BigInt::from(-4)) * b, c);
+    }
+
+    #[test]
+    fn test_from_bytes_be() {
+        let a = FiniteField::from_bytes_be(&[0x01, 0x02], &[0x01, 0x12]);
+        let b = FiniteField::from((258, 274));
+
+        assert_eq!(a, b);
     }
 }
