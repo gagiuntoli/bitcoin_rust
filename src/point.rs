@@ -1,5 +1,6 @@
 use crate::finite_field::FiniteField;
 use hex;
+use num::{One, Zero};
 use num_bigint::{BigInt, BigUint};
 use std::ops::Add;
 
@@ -50,14 +51,14 @@ impl Point {
     }
 
     #[allow(dead_code)]
-    fn scale(self, _scalar: u32) -> Self {
+    fn scale(self, _scalar: BigUint) -> Self {
         let mut current = self.clone();
-        let mut result = Point::Zero;
         let mut scalar = _scalar;
+        let mut result = Point::Zero;
 
-        while scalar != 0 {
-            if scalar & 1 != 0 {
-                result = result + current.clone();
+        while scalar != BigUint::zero() {
+            if &scalar & BigUint::one() != BigUint::zero() {
+                result = current.clone() + result;
             }
             current = current.clone() + current;
             scalar = scalar >> 1;
@@ -74,7 +75,7 @@ impl Add for Point {
             (Point::Zero, _) => return rhs,
             (_, Point::Zero) => return self,
             (
-                Point::Coor { a, b, x, y, .. },
+                Point::Coor { a, b, x, y },
                 Point::Coor {
                     a: a_rhs,
                     b: b_rhs,
@@ -89,16 +90,21 @@ impl Add for Point {
                         x, y, a, b, x_rhs, y_rhs, a_rhs, b_rhs
                     );
                 }
-                if x != x_rhs {
+                if x == x_rhs && y != y_rhs {
+                    Point::Zero
+                } else if self == rhs && y == x_rhs.clone().scale(BigUint::zero()) {
+                    Point::Zero
+                } else if x != x_rhs {
                     let s = (y_rhs.clone() - y.clone()) / (x_rhs.clone() - x.clone());
                     let x_res = s.clone().pow(BigInt::from(2u32)) - x.clone() - x_rhs.clone();
                     let y_res = s.clone() * (x.clone() - x_res.clone()) - y;
-                    return Point::Coor {
+
+                    Point::Coor {
                         a,
                         b,
                         x: x_res,
                         y: y_res,
-                    };
+                    }
                 } else {
                     let s = (x.clone().pow(BigInt::from(2u32)).scale(BigUint::from(3u32))
                         + a.clone())
@@ -268,27 +274,29 @@ mod tests {
         let x = FiniteField::from((47, prime));
         let y = FiniteField::from((71, prime));
         let pr = Point::new(&a, &b, &x, &y);
-        assert_eq!(p.clone().scale(1), pr);
+        assert_eq!(p.clone().scale(BigUint::from(1u32)), pr);
 
         let x = FiniteField::from((36, prime));
         let y = FiniteField::from((111, prime));
         let pr = Point::new(&a, &b, &x, &y);
-        assert_eq!(p.clone().scale(2), pr);
+        assert_eq!(p.clone().scale(BigUint::from(2u32)), pr);
 
         let x = FiniteField::from((15, prime));
         let y = FiniteField::from((137, prime));
         let pr = Point::new(&a, &b, &x, &y);
-        assert_eq!(p.clone().scale(3), pr);
+        assert_eq!(p.clone().scale(BigUint::from(3u32)), pr);
 
         let x = FiniteField::from((194, prime));
         let y = FiniteField::from((51, prime));
         let pr = Point::new(&a, &b, &x, &y);
-        assert_eq!(p.clone().scale(4), pr);
+        assert_eq!(p.clone().scale(BigUint::from(4u32)), pr);
 
         let x = FiniteField::from((47, prime));
         let y = FiniteField::from((152, prime));
         let pr = Point::new(&a, &b, &x, &y);
-        assert_eq!(p.scale(20), pr);
+        assert_eq!(p.clone().scale(BigUint::from(20u32)), pr);
+
+        assert_eq!(p.scale(BigUint::from(21u32)), Point::Zero);
     }
 
     #[test]
@@ -309,6 +317,22 @@ mod tests {
         let gx = FiniteField::from_bytes_be(&gx, &prime);
         let gy = FiniteField::from_bytes_be(&gy, &prime);
 
-        assert!(Point::is_on_curve(&Point::Coor { a, b, x: gx, y: gy }));
+        assert!(Point::is_on_curve(&Point::Coor {
+            a: a.clone(),
+            b: b.clone(),
+            x: gx.clone(),
+            y: gy.clone()
+        }));
+
+        let n = hex::decode("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141")
+            .unwrap();
+        let p = Point::Coor {
+            a,
+            b,
+            x: gx.clone(),
+            y: gy.clone(),
+        };
+
+        assert_eq!(p.scale(BigUint::from_bytes_be(&n)), Point::Zero);
     }
 }
