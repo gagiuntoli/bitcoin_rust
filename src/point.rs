@@ -4,7 +4,7 @@ use num_bigint::{BigInt, BigUint};
 use std::ops::Add;
 
 #[derive(PartialEq, Debug, Clone)]
-enum Point {
+pub enum Point {
     Coor {
         a: FiniteField,
         b: FiniteField,
@@ -39,7 +39,7 @@ impl Point {
         self == Point::Zero
     }
 
-    fn is_on_curve(p: &Point) -> bool {
+    pub fn is_on_curve(p: &Point) -> bool {
         match p {
             Point::Coor { a, b, x, y } => {
                 return y.clone().pow(BigInt::from(2u32))
@@ -50,7 +50,7 @@ impl Point {
     }
 
     #[allow(dead_code)]
-    fn scale(self, _scalar: BigUint) -> Self {
+    pub fn scale(self, _scalar: BigUint) -> Self {
         let mut current = self.clone();
         let mut scalar = _scalar;
         let mut result = Point::Zero;
