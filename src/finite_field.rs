@@ -10,17 +10,6 @@ pub struct FiniteField {
 
 impl FiniteField {
     #[allow(dead_code)]
-    pub fn new(number: BigUint, prime: BigUint) -> Self {
-        if number >= prime {
-            panic!(
-                "Number: {} isn't in the range [0, prime = {})",
-                number, prime
-            );
-        }
-        FiniteField { number, prime }
-    }
-
-    #[allow(dead_code)]
     pub fn from_bytes_be(number: &[u8], prime: &[u8]) -> Self {
         let number = BigUint::from_bytes_be(number);
         let prime = BigUint::from_bytes_be(prime);

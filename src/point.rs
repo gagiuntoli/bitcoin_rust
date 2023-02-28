@@ -1,5 +1,4 @@
 use crate::finite_field::FiniteField;
-use hex;
 use num::{One, Zero};
 use num_bigint::{BigInt, BigUint};
 use std::ops::Add;
@@ -127,6 +126,7 @@ impl Add for Point {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hex;
 
     #[test]
     fn test_on_curve() {
