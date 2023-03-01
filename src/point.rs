@@ -42,8 +42,8 @@ impl Point {
     pub fn is_on_curve(p: &Point) -> bool {
         match p {
             Point::Coor { a, b, x, y } => {
-                return y.clone().pow(BigInt::from(2u32))
-                    == x.clone().pow(BigInt::from(3u32)) + a.clone() * x.clone() + b.clone()
+                return y.clone().pow(&BigInt::from(2u32))
+                    == x.clone().pow(&BigInt::from(3u32)) + a.clone() * x.clone() + b.clone()
             }
             Point::Zero => true,
         }
@@ -95,7 +95,7 @@ impl Add for Point {
                     Point::Zero
                 } else if x != x_rhs {
                     let s = (y_rhs.clone() - y.clone()) / (x_rhs.clone() - x.clone());
-                    let x_res = s.clone().pow(BigInt::from(2u32)) - x.clone() - x_rhs.clone();
+                    let x_res = s.clone().pow(&BigInt::from(2u32)) - x.clone() - x_rhs.clone();
                     let y_res = s.clone() * (x.clone() - x_res.clone()) - y;
 
                     Point::Coor {
@@ -105,11 +105,14 @@ impl Add for Point {
                         y: y_res,
                     }
                 } else {
-                    let s = (x.clone().pow(BigInt::from(2u32)).scale(BigUint::from(3u32))
+                    let s = (x
+                        .clone()
+                        .pow(&BigInt::from(2u32))
+                        .scale(BigUint::from(3u32))
                         + a.clone())
                         / (y.clone().scale(BigUint::from(2u32)));
                     let x_res =
-                        s.clone().pow(BigInt::from(2u32)) - x.clone().scale(BigUint::from(2u32));
+                        s.clone().pow(&BigInt::from(2u32)) - x.clone().scale(BigUint::from(2u32));
                     let y_res = s * (x - x_res.clone()) - y;
                     return Point::Coor {
                         a,

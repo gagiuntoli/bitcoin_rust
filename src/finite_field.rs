@@ -4,8 +4,8 @@ use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct FiniteField {
-    number: BigUint,
-    prime: BigUint,
+    pub number: BigUint,
+    pub prime: BigUint,
 }
 
 impl FiniteField {
@@ -26,7 +26,7 @@ impl FiniteField {
         }
     }
 
-    pub fn pow(self, exp: BigInt) -> FiniteField {
+    pub fn pow(self, exp: &BigInt) -> FiniteField {
         let exp = exp.mod_floor(&(self.prime.clone() - BigUint::one()).to_bigint().unwrap());
         let exp = exp.to_biguint().unwrap();
 
@@ -108,7 +108,7 @@ impl Div for FiniteField {
     fn div(self, rhs: FiniteField) -> FiniteField {
         self.check_equal_order_and_panic(&rhs);
 
-        self.clone() * rhs.pow((self.prime - BigUint::from(2u32)).to_bigint().unwrap())
+        self.clone() * rhs.pow(&(self.prime - BigUint::from(2u32)).to_bigint().unwrap())
     }
 }
 
@@ -207,18 +207,18 @@ mod tests {
         let a = FiniteField::from((7, 19));
         let b = FiniteField::from((1, 19));
 
-        assert_eq!(a.pow(BigInt::from(3u32)), b);
+        assert_eq!(a.pow(&BigInt::from(3u32)), b);
 
         let a = FiniteField::from((9, 19));
         let b = FiniteField::from((7, 19));
 
-        assert_eq!(a.pow(BigInt::from(12u32)), b);
+        assert_eq!(a.pow(&BigInt::from(12u32)), b);
 
         let a = FiniteField::from((12, 97));
         let b = FiniteField::from((77, 97));
         let c = FiniteField::from((63, 97));
 
-        assert_eq!(a.pow(BigInt::from(7u32)) * b.pow(BigInt::from(49u32)), c);
+        assert_eq!(a.pow(&BigInt::from(7u32)) * b.pow(&BigInt::from(49u32)), c);
     }
 
     #[test]
@@ -251,19 +251,19 @@ mod tests {
     #[test]
     fn test_exercise_7() {
         assert!((1..7)
-            .map(|i| FiniteField::from((i, 7)).pow(BigInt::from(7u32 - 1)))
+            .map(|i| FiniteField::from((i, 7)).pow(&BigInt::from(7u32 - 1)))
             .all(|elem| elem == FiniteField::from((1, 7))));
 
         assert!((1..11)
-            .map(|i| FiniteField::from((i, 11)).pow(BigInt::from(11u32 - 1)))
+            .map(|i| FiniteField::from((i, 11)).pow(&BigInt::from(11u32 - 1)))
             .all(|elem| elem == FiniteField::from((1, 11))));
 
         assert!((1..17)
-            .map(|i| FiniteField::from((i, 17)).pow(BigInt::from(17u32 - 1)))
+            .map(|i| FiniteField::from((i, 17)).pow(&BigInt::from(17u32 - 1)))
             .all(|elem| elem == FiniteField::from((1, 17))));
 
         assert!((1..31)
-            .map(|i| FiniteField::from((i, 31)).pow(BigInt::from(31u32 - 1)))
+            .map(|i| FiniteField::from((i, 31)).pow(&BigInt::from(31u32 - 1)))
             .all(|elem| elem == FiniteField::from((1, 31))));
     }
 
@@ -278,13 +278,13 @@ mod tests {
         let a = FiniteField::from((17, 31));
         let b = FiniteField::from((29, 31));
 
-        assert_eq!(a.pow(BigInt::from(-3)), b);
+        assert_eq!(a.pow(&BigInt::from(-3)), b);
 
         let a = FiniteField::from((4, 31));
         let b = FiniteField::from((11, 31));
         let c = FiniteField::from((13, 31));
 
-        assert_eq!(a.pow(BigInt::from(-4)) * b, c);
+        assert_eq!(a.pow(&BigInt::from(-4)) * b, c);
     }
 
     #[test]
