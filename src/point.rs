@@ -1,9 +1,11 @@
 use crate::finite_field::FiniteField;
+use hex;
 use num::{One, Zero};
 use num_bigint::{BigInt, BigUint};
+use std::fmt::{self, Debug, Write};
 use std::ops::Add;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Clone)]
 pub enum Point {
     Coor {
         a: FiniteField,
@@ -12,6 +14,21 @@ pub enum Point {
         y: FiniteField,
     },
     Zero,
+}
+
+impl Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Point::Coor { x, y, .. } = self {
+            write!(
+                f,
+                "Point [x = {:x?} y = {}]",
+                hex::encode(&x.number.to_bytes_be()),
+                hex::encode(&y.number.to_bytes_be())
+            )
+        } else {
+            write!(f, "Point = Zero")
+        }
+    }
 }
 
 impl Point {
@@ -49,6 +66,7 @@ impl Point {
         }
     }
 
+    // TODO: take a reference for the scalar
     #[allow(dead_code)]
     pub fn scale(self, _scalar: BigUint) -> Self {
         let mut current = self.clone();

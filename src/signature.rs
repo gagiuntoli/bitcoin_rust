@@ -1,19 +1,36 @@
+use std::fmt::Debug;
+
 use crate::point::Point;
 use crate::secp256k1::Secp256k1Point;
 use num_bigint::BigUint;
+use sha256::digest;
+use std::fmt;
 
-type PublicKey = Secp256k1Point; // P = e * G
+pub type PublicKey = Secp256k1Point; // P = e * G
 
-struct Signature {
-    r: BigUint,
-    s: BigUint,
+#[derive(Debug)]
+pub struct Signature {
+    pub r: BigUint,
+    pub s: BigUint,
 }
 
 impl Signature {
-    pub fn sign(z: &[u8], public_key: &PublicKey) -> Self {
-        todo!()
+    #[allow(dead_code)]
+    pub fn sign(z: &[u8], e: &BigUint, k: &BigUint) -> Signature {
+        let z = BigUint::from_bytes_be(z);
+        let point = Secp256k1Point::generator().scale(k.clone());
+
+        if let Point::Coor { x, .. } = point {
+            let r = x.number;
+            let k_inv = k.modpow(&Secp256k1Point::n_minus_2(), &Secp256k1Point::n());
+            let s = ((z + r.clone() * e) * k_inv) % Secp256k1Point::n();
+            Signature { r, s }
+        } else {
+            panic!("it was not posible to generate the random point");
+        }
     }
 
+    #[allow(dead_code)]
     pub fn verify(signature: &Signature, z: &[u8], public_key: &PublicKey) -> bool {
         let n = Secp256k1Point::n();
 
@@ -43,7 +60,6 @@ impl Signature {
 mod tests {
     use super::*;
     use hex;
-    use num_bigint::Sign;
 
     #[test]
     fn test_verification_true() {
@@ -144,5 +160,101 @@ mod tests {
         let result = Signature::verify(&signature, &z, &public_key);
 
         assert!(!result);
+    }
+
+    #[test]
+    fn test_verification_exercise_6() {
+        let px = hex::decode("887387e452b8eacc4acfde10d9aaf7f6d9a0f975aabb10d006e4da568744d06c")
+            .unwrap();
+        let py = hex::decode("61de6d95231cd89026e286df3b6ae4a894a3378e393e93a0f45b666329a0ae34")
+            .unwrap();
+        let public_key = Secp256k1Point::from_bytes_be(&px, &py);
+
+        let z = hex::decode("ec208baa0fc1c19f708a9ca96fdeff3ac3f230bb4a7ba4aede4942ad003c0f60")
+            .unwrap();
+        let r = hex::decode("ac8d1c87e51d0d441be8b3dd5b05c8795b48875dffe00b7ffcfac23010d3a395")
+            .unwrap();
+        let s = hex::decode("068342ceff8935ededd102dd876ffd6ba72d6a427a3edb13d26eb0781cb423c4")
+            .unwrap();
+
+        let signature = Signature {
+            r: BigUint::from_bytes_be(&r),
+            s: BigUint::from_bytes_be(&s),
+        };
+
+        let result = Signature::verify(&signature, &z, &public_key);
+
+        assert!(result);
+
+        let z = hex::decode("7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d")
+            .unwrap();
+        let r =
+            hex::decode("eff69ef2b1bd93a66ed5219add4fb51e11a840f404876325a1e8ffe0529a2c").unwrap();
+        let s = hex::decode("c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6")
+            .unwrap();
+
+        let signature = Signature {
+            r: BigUint::from_bytes_be(&r),
+            s: BigUint::from_bytes_be(&s),
+        };
+
+        let result = Signature::verify(&signature, &z, &public_key);
+
+        assert!(result);
+    }
+
+    #[test]
+    fn test_sign() {
+        // TODO: code this into a function that takes a string slice
+        let e = BigUint::from_bytes_be(&hex::decode(digest("my secret")).unwrap());
+        let z = hex::decode(digest("my message")).unwrap();
+        let k = BigUint::from(1234567890u32);
+
+        let signature = Signature::sign(&z, &e, &k);
+
+        // println!("r = {:x?}", signature.r.to_bytes_be());
+        // println!("s = {:x?}", signature.s.to_bytes_be());
+    }
+
+    #[test]
+    fn test_sign_2() {
+        // TODO: code this into a function that takes a string slice
+        let e = BigUint::from(12345u32);
+
+        let public_key = Secp256k1Point::compute_public_key(&e);
+
+        if let Point::Coor { x, y, .. } = public_key {
+            assert_eq!(
+                hex::encode(x.number.to_bytes_be()),
+                "f01d6b9018ab421dd410404cb869072065522bf85734008f105cf385a023a80f"
+            );
+            assert_eq!(
+                hex::encode(y.number.to_bytes_be()),
+                "0eba29d0f0c5408ed681984dc525982abefccd9f7ff01dd26da4999cf3f6a295"
+            );
+        }
+
+        // TODO: code double hash
+        let z = hex::decode(digest("Programming Bitcoin!")).unwrap();
+        let z: &[u8] = &z;
+        let z = hex::decode(digest(z)).unwrap();
+
+        let k = BigUint::from(1234567890u32);
+
+        let signature = Signature::sign(&z, &e, &k);
+
+        assert_eq!(
+            hex::encode(z),
+            "969f6056aa26f7d2795fd013fe88868d09c9f6aed96965016e1936ae47060d48"
+        );
+
+        assert_eq!(
+            hex::encode(signature.r.to_bytes_be()),
+            "2b698a0f0a4041b77e63488ad48c23e8e8838dd1fb7520408b121697b782ef22"
+        );
+        assert_eq!(
+            hex::encode(signature.s.to_bytes_be()),
+            "1dbc63bfef4416705e602a7b564161167076d8b20990a0f26f316cff2cb0bc1a"
+        );
     }
 }
