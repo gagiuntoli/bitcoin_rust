@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use num::{Integer, One};
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use std::ops::{Add, Div, Mul, Sub};
@@ -9,7 +11,6 @@ pub struct FiniteField {
 }
 
 impl FiniteField {
-    #[allow(dead_code)]
     pub fn from_bytes_be(number: &[u8], prime: &[u8]) -> Self {
         let number = BigUint::from_bytes_be(number);
         let prime = BigUint::from_bytes_be(prime);
@@ -38,7 +39,6 @@ impl FiniteField {
         }
     }
 
-    #[allow(dead_code)]
     pub fn scale(self, scalar: BigUint) -> FiniteField {
         FiniteField {
             number: (self.number * scalar) % self.prime.clone(),

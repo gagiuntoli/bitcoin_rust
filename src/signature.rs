@@ -1,10 +1,10 @@
+#![allow(dead_code)]
+
 use std::fmt::Debug;
 
 use crate::point::Point;
 use crate::secp256k1::Secp256k1Point;
 use num_bigint::BigUint;
-use sha256::digest;
-use std::fmt;
 
 pub type PublicKey = Secp256k1Point; // P = e * G
 
@@ -15,7 +15,6 @@ pub struct Signature {
 }
 
 impl Signature {
-    #[allow(dead_code)]
     pub fn sign(z: &[u8], e: &BigUint, k: &BigUint) -> Signature {
         let z = BigUint::from_bytes_be(z);
         let point = Secp256k1Point::generator().scale(k.clone());
@@ -30,7 +29,6 @@ impl Signature {
         }
     }
 
-    #[allow(dead_code)]
     pub fn verify(signature: &Signature, z: &[u8], public_key: &PublicKey) -> bool {
         let n = Secp256k1Point::n();
 
@@ -59,6 +57,7 @@ impl Signature {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hash::sha256_double;
     use hex;
 
     #[test]
@@ -205,20 +204,37 @@ mod tests {
 
     #[test]
     fn test_sign() {
-        // TODO: code this into a function that takes a string slice
-        let e = BigUint::from_bytes_be(&hex::decode(digest("my secret")).unwrap());
-        let z = hex::decode(digest("my message")).unwrap();
+        let e = BigUint::from_bytes_be(&sha256_double("my secret"));
+        let z = sha256_double("my message");
         let k = BigUint::from(1234567890u32);
 
         let signature = Signature::sign(&z, &e, &k);
 
-        // println!("r = {:x?}", signature.r.to_bytes_be());
-        // println!("s = {:x?}", signature.s.to_bytes_be());
+        let public_key = Secp256k1Point::compute_public_key(&e);
+
+        if let Point::Coor { x, y, .. } = public_key {
+            assert_eq!(
+                hex::encode(x.number.to_bytes_be()),
+                "028d003eab2e428d11983f3e97c3fa0addf3b42740df0d211795ffb3be2f6c52"
+            );
+            assert_eq!(
+                hex::encode(y.number.to_bytes_be()),
+                "0ae987b9ec6ea159c78cb2a937ed89096fb218d9e7594f02b547526d8cd309e2"
+            );
+        }
+
+        assert_eq!(
+            hex::encode(signature.r.to_bytes_be()),
+            "2b698a0f0a4041b77e63488ad48c23e8e8838dd1fb7520408b121697b782ef22"
+        );
+        assert_eq!(
+            hex::encode(signature.s.to_bytes_be()),
+            "bb14e602ef9e3f872e25fad328466b34e6734b7a0fcd58b1eb635447ffae8cb9"
+        );
     }
 
     #[test]
     fn test_sign_2() {
-        // TODO: code this into a function that takes a string slice
         let e = BigUint::from(12345u32);
 
         let public_key = Secp256k1Point::compute_public_key(&e);
@@ -234,10 +250,7 @@ mod tests {
             );
         }
 
-        // TODO: code double hash
-        let z = hex::decode(digest("Programming Bitcoin!")).unwrap();
-        let z: &[u8] = &z;
-        let z = hex::decode(digest(z)).unwrap();
+        let z = sha256_double("Programming Bitcoin!");
 
         let k = BigUint::from(1234567890u32);
 

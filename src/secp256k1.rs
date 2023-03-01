@@ -1,7 +1,8 @@
+#![allow(dead_code)]
+
 use crate::finite_field::FiniteField;
 use crate::point::Point;
 
-#[allow(unused_imports)]
 use num_bigint::BigUint;
 
 pub type Secp256k1Point = Point;
@@ -13,7 +14,6 @@ impl Secp256k1Point {
         BigUint::from_bytes_be(&prime)
     }
 
-    #[allow(dead_code)]
     pub fn n() -> BigUint {
         let n = hex::decode("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141")
             .unwrap();
@@ -28,7 +28,6 @@ impl Secp256k1Point {
         FiniteField::from_bytes_be(&[7u8], &Self::prime().to_bytes_be())
     }
 
-    #[allow(dead_code)]
     pub fn generator() -> Point {
         let gx = hex::decode("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
             .unwrap();
@@ -38,17 +37,14 @@ impl Secp256k1Point {
         Secp256k1Point::from_bytes_be(&gx, &gy)
     }
 
-    #[allow(dead_code)]
     pub fn compute_public_key(e: &BigUint) -> Point {
         Secp256k1Point::generator().scale(e.clone())
     }
 
-    #[allow(dead_code)]
     pub fn n_minus_2() -> BigUint {
         Self::n() - BigUint::from(2u32)
     }
 
-    #[allow(dead_code)]
     pub fn from_bytes_be(x: &[u8], y: &[u8]) -> Point {
         let prime = hex::decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
             .unwrap();
