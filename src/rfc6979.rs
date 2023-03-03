@@ -16,6 +16,9 @@ pub fn generate_k<const N: usize, const K: usize>(
     let mut k = [0x00; K];
     let mut v = [0x01; K];
 
+    println!("1. k = {:x?}", k);
+    println!("1. v = {:x?}", v);
+
     // K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
     // V = HMAC_K(V)
     k = hmac(
@@ -24,14 +27,19 @@ pub fn generate_k<const N: usize, const K: usize>(
             &v[..],
             &[0x00][..],
             &int_2_octets::<N>(BigUint::from_bytes_be(e))[..],
-            &bits_2_octets::<N>(z, q)[..],
+            &z[..],
         ]
         .concat(),
     );
+    //println!(
+    //    "int_to_octets(e) = {:x?}",
+    //    &int_2_octets::<N>(BigUint::from_bytes_be(e))[..]
+    //);
+    //println!("bits_to_octets(z) = {:x?}", &bits_2_octets::<N>(z, q)[..]);
 
     let v = hmac(&k, &v[..]);
-    println!("k = {:x?}", k);
-    println!("v = {:x?}", v);
+    println!("2. k = {:x?}", k);
+    println!("2. v = {:x?}", v);
 
     // K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
     // V = HMAC_K(V)
@@ -41,7 +49,7 @@ pub fn generate_k<const N: usize, const K: usize>(
             &v[..],
             &[0x01][..],
             &int_2_octets::<N>(BigUint::from_bytes_be(e))[..],
-            &bits_2_octets::<N>(z, q)[..],
+            &z[..],
         ]
         .concat(),
     );
@@ -52,7 +60,7 @@ pub fn generate_k<const N: usize, const K: usize>(
     let mut t = [0u8; N];
     let mut i = 0;
 
-    while i < 3 {
+    while i < 4 {
         // V = HMAC_K(V)
         // let mut v = hmac(&k, &v[..]);
 
@@ -119,11 +127,17 @@ fn bits_2_int(vb: &[u8], qlen: u64) -> BigUint {
 fn int_2_octets<const N: usize>(n: BigUint) -> [u8; N] {
     let n = n.to_bytes_be();
     let mut buffer = [0u8; N];
-    if N >= n.len() {
+
+    // dbg!("n.len() = {} N = {}", n.len(), N);
+
+    if n.len() < N {
         let diff = N - n.len();
-        buffer[diff..].copy_from_slice(&n);
+        buffer[diff..].copy_from_slice(&n[..]);
+    } else if n.len() > N {
+        let diff = n.len() - N;
+        buffer[..].copy_from_slice(&n[diff..]);
     } else {
-        buffer[..].copy_from_slice(&n[..N]);
+        buffer[..].copy_from_slice(&n[..]);
     }
     buffer
 }
@@ -156,6 +170,15 @@ mod tests {
             hex::encode(z_octets),
             "01795edf0d54db760f156d0dac04c0322b3a204224"
         );
+    }
+
+    #[test]
+    fn test_ints_2_octets() {
+        let e = hex::decode("9a4d6792295a7f730fc3f2b49cbc0f62e862272f").unwrap();
+
+        let e: [u8; 21] = int_2_octets(BigUint::from_bytes_be(&e));
+
+        assert_eq!(hex::encode(e), "009a4d6792295a7f730fc3f2b49cbc0f62e862272f");
     }
 
     #[test]
@@ -203,5 +226,7 @@ mod tests {
 
         let z: [u8; 21] = bits_2_octets(&z, &q);
         let k = generate_k::<21, 32>(&z, &e, &q);
+
+        println!("k final = {:x?}", k.to_bytes_be());
     }
 }
