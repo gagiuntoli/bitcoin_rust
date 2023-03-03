@@ -4,7 +4,10 @@ use std::fmt::Debug;
 
 use crate::point::Point;
 use crate::secp256k1::Secp256k1Point;
+use hmac::{Hmac, Mac};
+use num::One;
 use num_bigint::BigUint;
+use sha2::Sha256;
 
 pub type PublicKey = Secp256k1Point; // P = e * G
 
@@ -27,6 +30,106 @@ impl Signature {
         } else {
             panic!("it was not posible to generate the random point");
         }
+    }
+
+    pub fn sign2(z: &[u8], e: &BigUint) -> Signature {
+        let k = Self::deterministic_k(z, e, &Secp256k1Point::n());
+        let z = BigUint::from_bytes_be(z);
+        let point = Secp256k1Point::generator().scale(k.clone());
+
+        if let Point::Coor { x, .. } = point {
+            let r = x.number;
+            let k_inv = k.modpow(&Secp256k1Point::n_minus_2(), &Secp256k1Point::n());
+            let s = ((z + r.clone() * e) * k_inv) % Secp256k1Point::n();
+            Signature { r, s }
+        } else {
+            panic!("it was not posible to generate the random point");
+        }
+    }
+
+    fn to_bytes32_be(v: &[u8]) -> [u8; 32] {
+        let diff = 32 - v.len();
+        assert!(diff >= 0);
+
+        let mut buffer = [0u8; 32];
+        buffer[diff..].copy_from_slice(&v);
+        buffer
+    }
+
+    pub fn deterministic_k(z: &[u8], e: &BigUint, n: &BigUint) -> BigUint {
+        let k = [0x00u8; 32];
+        let v = [0x01u8; 32];
+        println!("v = {:?}", v);
+        let mut z = BigUint::from_bytes_be(z);
+
+        println!("z1 = {}", hex::encode(z.to_bytes_be()));
+        if z > n.clone() {
+            z -= n;
+        }
+        println!("z1 = {}", hex::encode(z.to_bytes_be()));
+
+        let z_bytes = Self::to_bytes32_be(&z.to_bytes_be());
+        let e_bytes = Self::to_bytes32_be(&e.to_bytes_be());
+
+        // Create alias for HMAC-SHA256
+        type HmacSha256 = Hmac<Sha256>;
+
+        let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+        let msg = [&v[..], &[0u8; 1][..], &e_bytes[..], &z_bytes[..]].concat();
+        mac.update(&msg);
+        let k = mac.finalize().into_bytes();
+        assert_eq!(k.len(), 32);
+
+        let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+        let msg = v;
+        mac.update(&msg);
+        let v = mac.finalize().into_bytes();
+        assert_eq!(v.len(), 32);
+
+        println!("k = {:x?}", k);
+        println!("v = {:x?}", v);
+
+        let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+        let msg = [&v[..], &[0u8; 1][..], &e_bytes[..], &z_bytes[..]].concat();
+        mac.update(&msg);
+        let k = mac.finalize().into_bytes();
+        assert_eq!(k.len(), 32);
+
+        let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+        let msg = v;
+        mac.update(&msg);
+        let v = mac.finalize().into_bytes();
+        assert_eq!(v.len(), 32);
+
+        println!("k = {:0x?}", k);
+        println!("v = {:0x?}", v);
+
+        loop {
+            let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+            let msg = v;
+            mac.update(&msg);
+            let v = mac.finalize().into_bytes();
+            assert_eq!(v.len(), 32);
+
+            let candidate = BigUint::from_bytes_be(&v);
+            if candidate > BigUint::one() && candidate < Secp256k1Point::n() {
+                return candidate;
+            }
+
+            let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+            let msg = [&v[..], &[0u8; 1][..]].concat();
+            mac.update(&msg);
+            let k = mac.finalize().into_bytes();
+            assert_eq!(k.len(), 32);
+
+            let mut mac = HmacSha256::new_from_slice(&k).expect("HMAC can take key of any size");
+            let msg = v;
+            mac.update(&msg);
+            let v = mac.finalize().into_bytes();
+            assert_eq!(v.len(), 32);
+        }
+
+        BigUint::from(12345u32)
     }
 
     pub fn verify(signature: &Signature, z: &[u8], public_key: &PublicKey) -> bool {
@@ -269,5 +372,32 @@ mod tests {
             hex::encode(signature.s.to_bytes_be()),
             "1dbc63bfef4416705e602a7b564161167076d8b20990a0f26f316cff2cb0bc1a"
         );
+    }
+
+    #[test]
+    fn test_sign_deterministic_k() {
+        let e = BigUint::from(12345u32);
+
+        let z = sha256_double("Programming Bitcoin!");
+
+        let signature = Signature::sign2(&z, &e);
+    }
+
+    #[test]
+    fn test_deterministic_k() {
+        // https://www.rfc-editor.org/rfc/rfc6979
+        let q = BigUint::from_bytes_be(
+            &hex::decode("04000000000000000000020108a2e0cc0d99f8a5ef").unwrap(),
+        );
+
+        let e = BigUint::from_bytes_be(
+            &hex::decode("009a4d6792295a7f730fc3f2b49cbc0f62e862272f").unwrap(),
+        );
+
+        let z = &hex::decode("af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf")
+            .unwrap();
+
+        let k = Signature::deterministic_k(z, &e, &q);
+        println!("k final = {}", hex::encode(k.to_bytes_be()));
     }
 }

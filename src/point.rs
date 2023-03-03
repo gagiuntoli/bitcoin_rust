@@ -21,7 +21,7 @@ impl Debug for Point {
         if let Point::Coor { x, y, .. } = self {
             write!(
                 f,
-                "Point [x = {:x?} y = {}]",
+                "Point [x = {} y = {}]",
                 hex::encode(&x.number.to_bytes_be()),
                 hex::encode(&y.number.to_bytes_be())
             )
