@@ -16,9 +16,6 @@ pub fn generate_k<const N: usize, const K: usize>(
     let mut k = [0x00; K];
     let mut v = [0x01; K];
 
-    println!("1. k = {:x?}", k);
-    println!("1. v = {:x?}", v);
-
     // K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
     // V = HMAC_K(V)
     k = hmac(
@@ -31,15 +28,8 @@ pub fn generate_k<const N: usize, const K: usize>(
         ]
         .concat(),
     );
-    //println!(
-    //    "int_to_octets(e) = {:x?}",
-    //    &int_2_octets::<N>(BigUint::from_bytes_be(e))[..]
-    //);
-    //println!("bits_to_octets(z) = {:x?}", &bits_2_octets::<N>(z, q)[..]);
 
     let v = hmac(&k, &v[..]);
-    println!("2. k = {:x?}", k);
-    println!("2. v = {:x?}", v);
 
     // K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
     // V = HMAC_K(V)
@@ -54,48 +44,29 @@ pub fn generate_k<const N: usize, const K: usize>(
         .concat(),
     );
     let mut v = hmac(&k, &v[..]);
-    println!("k = {:x?}", k);
-    println!("v = {:x?}", v);
 
     let mut t = [0u8; N];
-    let mut i = 0;
 
-    while i < 4 {
-        // V = HMAC_K(V)
-        // let mut v = hmac(&k, &v[..]);
-
-        /*
-         * We want qlen bits, but we support only
-         * hash functions with an output length
-         * multiple of 8;acd hence, we will gather
-         * rlen bits, i.e., rolen octets.
-         */
+    loop {
         let mut toff = 0;
-        while (toff < N) {
+        while toff < N {
+            // V = HMAC_K(V)
             v = hmac(&k, &v[..]);
             let cc = min(v.len(), N - toff);
             t[toff..toff + cc].copy_from_slice(&v[..cc]);
             toff += cc;
         }
-        println!("v = {:x?}", v);
-        println!("t = {:x?}", t);
 
-        let k_candidate = bits_2_int(&v, 163);
+        let k_candidate = bits_2_int(&t, 163);
         if k_candidate != BigUint::zero() && k_candidate < q_bi {
             return k_candidate;
         }
-        println!("k_bi = {:x?}", hex::encode(k_candidate.to_bytes_be()));
 
         // K = HMAC_K(V || 0x00)
         // V = HMAC_K(V)
         k = hmac(&k, &[&v[..], &[0x00][..]].concat());
         v = hmac(&k, &v[..]);
-        println!("----");
-        println!("k = {:x?}", k);
-        println!("v = {:x?}", v);
-        i += 1;
     }
-    BigUint::from(1u32)
 }
 
 fn hmac<const K: usize>(k: &[u8; K], h: &[u8]) -> [u8; K] {
@@ -128,8 +99,6 @@ fn int_2_octets<const N: usize>(n: BigUint) -> [u8; N] {
     let n = n.to_bytes_be();
     let mut buffer = [0u8; N];
 
-    // dbg!("n.len() = {} N = {}", n.len(), N);
-
     if n.len() < N {
         let diff = N - n.len();
         buffer[diff..].copy_from_slice(&n[..]);
@@ -156,6 +125,7 @@ fn bits_2_octets<const N: usize>(n: &[u8], q: &[u8]) -> [u8; N] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hash::sha256;
     use hex;
 
     #[test]
@@ -207,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_generate_k() {
-        let q = hex::decode("04000000000000000000020108a2e0cc0d99f8a5ef").unwrap();
+        let q: Vec<u8> = hex::decode("04000000000000000000020108a2e0cc0d99f8a5ef").unwrap();
         let e = hex::decode("009a4d6792295a7f730fc3f2b49cbc0f62e862272f").unwrap();
         let z = hex::decode("af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf")
             .unwrap();
@@ -221,12 +191,38 @@ mod tests {
 
         let q: [u8; 21] = int_2_octets(BigUint::from_bytes_be(&q));
         let e: [u8; 21] = int_2_octets(BigUint::from_bytes_be(&e));
-        println!("int_2_octets (q) = {:x?}", q);
-        println!("int_2_octets (e) = {:x?}", e);
-
         let z: [u8; 21] = bits_2_octets(&z, &q);
+
         let k = generate_k::<21, 32>(&z, &e, &q);
 
-        println!("k final = {:x?}", k.to_bytes_be());
+        assert_eq!(
+            hex::encode(k.to_bytes_be()),
+            "023af4074c90a02b3fe61d286d5c87f425e6bdd81b"
+        );
+    }
+
+    #[test]
+    fn test_vector_1() {
+        let q = &hex::decode("996f967f6c8e388d9e28d01e205fba957a5698b1").unwrap();
+        let z = sha256("sample");
+        let e = hex::decode("411602cb19a6ccc34494d79d98ef1e7ed5af25f7").unwrap();
+
+        let qlen = BigUint::from_bytes_be(&q).bits();
+        let rolen = (qlen + 7) >> 3;
+        let rlen = rolen * 8;
+
+        println!("qlen = {}", qlen);
+        println!("rolen = {}", rolen);
+        println!("rlen = {}", rlen);
+
+        let q: [u8; 20] = int_2_octets(BigUint::from_bytes_be(&q));
+        let e: [u8; 20] = int_2_octets(BigUint::from_bytes_be(&e));
+        let z: [u8; 20] = bits_2_octets(&z, &q);
+        let k = generate_k::<20, 32>(&z, &e, &q);
+
+        assert_eq!(
+            hex::encode(k.to_bytes_be()),
+            "519ba0546d0c39202a7d34d7dfa5e760b318bcfb"
+        );
     }
 }

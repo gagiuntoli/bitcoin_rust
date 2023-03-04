@@ -9,6 +9,11 @@ pub fn sha256_double(z: &str) -> Vec<u8> {
     hex::decode(digest(z)).unwrap()
 }
 
+pub fn sha256(z: &str) -> Vec<u8> {
+    let z = hex::decode(digest(z)).unwrap();
+    z
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

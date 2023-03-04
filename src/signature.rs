@@ -399,5 +399,10 @@ mod tests {
 
         let k = Signature::deterministic_k(z, &e, &q);
         println!("k final = {}", hex::encode(k.to_bytes_be()));
+
+        assert_eq!(
+            hex::encode(k.to_bytes_be()),
+            "23af4074c90a02b3fe61d286d5c87f425e6bdd81b"
+        )
     }
 }
