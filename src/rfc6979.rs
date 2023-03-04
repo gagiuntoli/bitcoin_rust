@@ -270,11 +270,11 @@ mod tests {
 
     #[test]
     fn test_vector_ecdsa_256_bits() {
-        let q = &hex::decode("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551")
-            .unwrap();
+        let q = "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551";
+        let q = &hex::decode(q).unwrap();
 
-        let e = hex::decode("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721")
-            .unwrap();
+        let e = "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721";
+        let e = hex::decode(e).unwrap();
 
         let z = sha256("sample");
 
@@ -292,9 +292,35 @@ mod tests {
 
         let k = generate_k::<32, 32>(&z, &e, &q);
 
-        assert_eq!(
-            hex::encode(k.to_bytes_be()),
-            "a6e3c57dd01abe90086538398355dd4c3b17aa873382b0f24d6129493d8aad60"
-        );
+        let k_expected = "a6e3c57dd01abe90086538398355dd4c3b17aa873382b0f24d6129493d8aad60";
+        assert_eq!(hex::encode(k.to_bytes_be()), k_expected);
+    }
+
+    #[test]
+    fn test_vector_ecdsa_571_bits() {
+        let q = "03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe661ce18ff55987308059b186823851ec7dd9ca1161de93d5174d66e8382e9bb2fe84e47";
+        let q = &hex::decode(q).unwrap();
+
+        let e = "0028a04857f24c1c082df0d909c0e72f453f2e2340ccb071f0e389bca2575da19124198c57174929ad26e348cf63f78d28021ef5a9bf2d5cbeaf6b7ccb6c4da824dd5c82cfb24e11";
+        let e = hex::decode(e).unwrap();
+
+        let z = sha256("sample");
+
+        let qlen = BigUint::from_bytes_be(&q).bits();
+        let rolen = (qlen + 7) >> 3;
+        let rlen = rolen * 8;
+
+        assert_eq!(qlen, 570);
+        assert_eq!(rolen, 72);
+        assert_eq!(rlen, 576);
+
+        let q: [u8; 72] = int_2_octets(BigUint::from_bytes_be(&q));
+        let e: [u8; 72] = int_2_octets(BigUint::from_bytes_be(&e));
+        let z: [u8; 72] = bits_2_octets(&z, &q);
+
+        let k = generate_k::<72, 32>(&z, &e, &q);
+
+        let k_exp = "015c2c6b7d1a070274484774e558b69fdfa193bdb7a23f27c2cd24298ce1b22a6cc9b7fb8cabfd6cf7c6b1cf3251e5a1cddd16fbfed28de79935bb2c631b8b8ea9cc4bcc937e669e";
+        assert_eq!(hex::encode(k.to_bytes_be()), k_exp);
     }
 }
