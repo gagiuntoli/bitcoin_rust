@@ -57,7 +57,7 @@ pub fn generate_k<const N: usize, const K: usize>(
             toff += cc;
         }
 
-        let k_candidate = bits_2_int(&t, 163);
+        let k_candidate = bits_2_int(&t, q_bi.bits());
         if k_candidate != BigUint::zero() && k_candidate < q_bi {
             return k_candidate;
         }
@@ -129,6 +129,47 @@ mod tests {
     use hex;
 
     #[test]
+    fn test_int_2_octets() {
+        let n = BigUint::from(1u32);
+
+        let qlen = n.bits();
+        let rolen = (qlen + 7) >> 3;
+        let rlen = rolen * 8;
+
+        assert_eq!(qlen, 1);
+        assert_eq!(rolen, 1);
+        assert_eq!(rlen, 8);
+
+        let result: [u8; 1] = int_2_octets(n.clone());
+        assert_eq!(result, [0x01]);
+
+        let result: [u8; 2] = int_2_octets(n.clone());
+        assert_eq!(result, [0x00, 0x01]);
+
+        let result: [u8; 3] = int_2_octets(n);
+        assert_eq!(result, [0x00, 0x00, 0x01]);
+
+        let n = BigUint::from(1u64 << 33);
+
+        let qlen = n.bits();
+        let rolen = (qlen + 7) >> 3;
+        let rlen = rolen * 8;
+
+        assert_eq!(qlen, 34);
+        assert_eq!(rolen, 5);
+        assert_eq!(rlen, 40);
+
+        let result: [u8; 5] = int_2_octets(n.clone());
+        assert_eq!(result, [0x02, 0x00, 0x00, 0x00, 0x00]);
+
+        let result: [u8; 6] = int_2_octets(n.clone());
+        assert_eq!(result, [0x00, 0x02, 0x00, 0x00, 0x00, 0x00]);
+
+        let result: [u8; 7] = int_2_octets(n.clone());
+        assert_eq!(result, [0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00]);
+    }
+
+    #[test]
     fn test_bits_2_octets() {
         let q = hex::decode("04000000000000000000020108a2e0cc0d99f8a5ef").unwrap();
         let z = hex::decode("af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf")
@@ -185,9 +226,10 @@ mod tests {
         let qlen = BigUint::from_bytes_be(&q).bits();
         let rolen = (qlen + 7) >> 3;
         let rlen = rolen * 8;
-        println!("qlen = {}", qlen);
-        println!("rolen = {}", rolen);
-        println!("rlen = {}", rlen);
+
+        assert_eq!(qlen, 163);
+        assert_eq!(rolen, 21);
+        assert_eq!(rlen, 168);
 
         let q: [u8; 21] = int_2_octets(BigUint::from_bytes_be(&q));
         let e: [u8; 21] = int_2_octets(BigUint::from_bytes_be(&e));
@@ -202,18 +244,18 @@ mod tests {
     }
 
     #[test]
-    fn test_vector_1() {
+    fn test_vector_dsa_1024_bits() {
         let q = &hex::decode("996f967f6c8e388d9e28d01e205fba957a5698b1").unwrap();
-        let z = sha256("sample");
         let e = hex::decode("411602cb19a6ccc34494d79d98ef1e7ed5af25f7").unwrap();
+        let z = sha256("sample");
 
         let qlen = BigUint::from_bytes_be(&q).bits();
         let rolen = (qlen + 7) >> 3;
         let rlen = rolen * 8;
 
-        println!("qlen = {}", qlen);
-        println!("rolen = {}", rolen);
-        println!("rlen = {}", rlen);
+        assert_eq!(qlen, 160);
+        assert_eq!(rolen, 20);
+        assert_eq!(rlen, 160);
 
         let q: [u8; 20] = int_2_octets(BigUint::from_bytes_be(&q));
         let e: [u8; 20] = int_2_octets(BigUint::from_bytes_be(&e));
@@ -223,6 +265,36 @@ mod tests {
         assert_eq!(
             hex::encode(k.to_bytes_be()),
             "519ba0546d0c39202a7d34d7dfa5e760b318bcfb"
+        );
+    }
+
+    #[test]
+    fn test_vector_ecdsa_256_bits() {
+        let q = &hex::decode("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551")
+            .unwrap();
+
+        let e = hex::decode("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721")
+            .unwrap();
+
+        let z = sha256("sample");
+
+        let qlen = BigUint::from_bytes_be(&q).bits();
+        let rolen = (qlen + 7) >> 3;
+        let rlen = rolen * 8;
+
+        assert_eq!(qlen, 256);
+        assert_eq!(rolen, 32);
+        assert_eq!(rlen, 256);
+
+        let q: [u8; 32] = int_2_octets(BigUint::from_bytes_be(&q));
+        let e: [u8; 32] = int_2_octets(BigUint::from_bytes_be(&e));
+        let z: [u8; 32] = bits_2_octets(&z, &q);
+
+        let k = generate_k::<32, 32>(&z, &e, &q);
+
+        assert_eq!(
+            hex::encode(k.to_bytes_be()),
+            "a6e3c57dd01abe90086538398355dd4c3b17aa873382b0f24d6129493d8aad60"
         );
     }
 }
