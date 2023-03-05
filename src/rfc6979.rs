@@ -16,34 +16,22 @@ pub fn generate_k<const N: usize, const K: usize>(
     let mut k = [0x00; K];
     let mut v = [0x01; K];
 
-    // K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
-    // V = HMAC_K(V)
-    k = hmac(
-        &k,
-        &[
-            &v[..],
-            &[0x00][..],
-            &int_2_octets::<N>(BigUint::from_bytes_be(e))[..],
-            &z[..],
-        ]
-        .concat(),
-    );
+    for i in 0..=1 {
+        // K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
+        // V = HMAC_K(V)
+        k = hmac(
+            &k,
+            &[
+                &v[..],
+                &[i][..],
+                &int_2_octets::<N>(BigUint::from_bytes_be(e))[..],
+                &z[..],
+            ]
+            .concat(),
+        );
 
-    let v = hmac(&k, &v[..]);
-
-    // K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
-    // V = HMAC_K(V)
-    k = hmac(
-        &k,
-        &[
-            &v[..],
-            &[0x01][..],
-            &int_2_octets::<N>(BigUint::from_bytes_be(e))[..],
-            &z[..],
-        ]
-        .concat(),
-    );
-    let mut v = hmac(&k, &v[..]);
+        v = hmac(&k, &v[..]);
+    }
 
     let mut t = [0u8; N];
 
